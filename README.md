@@ -22,7 +22,8 @@ Raw, cleaned, and sentiment-scored data files are excluded from this repo (see `
 | `01_glassdoor_data_cleaning.ipynb` | Loads raw Glassdoor export, audits missing values, drops 6 empty/constant columns (28 → 22) |
 | `02_text_cleaning.ipynb` | Builds a reusable `clean_text()` function (lowercase → strip punctuation → remove NLTK stopwords) and applies it to 4 Glassdoor review fields and the YouTube transcript field |
 | `03_keyword_analysis.ipynb` | Tokenizes cleaned text, counts word/bigram frequency, and visualizes results (bar charts + word clouds) per platform |
-| `04_sentiment_analysis.ipynb` | Scores polarity and subjectivity with TextBlob, labels each document positive/neutral/negative, and compares the tone of Glassdoor and YouTube |
+| `04_sentiment_analysis.ipynb` | Scores polarity and subjectivity with TextBlob and labels each Glassdoor review and YouTube transcript positive/neutral/negative, with bar and pie charts per platform |
+| `05_sentiment_comparison.ipynb` | Loads the two scored datasets, normalizes the sentiment split for each, and compares Glassdoor and YouTube side by side |
 
 ## Findings
 
@@ -48,11 +49,23 @@ Each document was scored with TextBlob (polarity from -1 to +1, subjectivity fro
 | ![Glassdoor sentiment distribution](images/glassdoor_sentiment_bar.png) | ![YouTube sentiment distribution](images/youtube_sentiment_bar.png) |
 | ![Glassdoor sentiment breakdown](images/glassdoor_sentiment_pie.png) | ![YouTube sentiment breakdown](images/youtube_sentiment_pie.png) |
 
+### Glassdoor vs. YouTube
+
+![Sentiment comparison: Glassdoor vs. YouTube](images/sentiment_comparison.png)
+
+| Sentiment | Glassdoor | YouTube | Gap (YouTube − Glassdoor) |
+|---|---|---|---|
+| Positive | 59.7% | 66.7% | +7.0 pts |
+| Neutral | 29.5% | 22.2% | −7.3 pts |
+| Negative | 10.8% | 11.1% | +0.3 pts |
+
+Negative sentiment is almost identical on both platforms (about 11%). The only visible difference is a modest shift from neutral to positive on YouTube, and with 9 transcripts that shift equals about one video.
+
 **Key takeaways**
 
 1. **Glassdoor leans clearly positive.** 60% of reviews scored positive and only 11% negative. Combined with the keyword results (`good pay`, `good benefits`), the positive tone appears to be tied mostly to compensation and benefits.
 2. **YouTube is also mostly positive.** 6 of 9 transcripts scored positive, 2 neutral, and 1 negative, even though the same videos are full of fatigue language (`tired`, `sleep`, `night`).
-3. **The two platforms look broadly aligned.** The overall split is similar (60/29/11 vs. 67/22/11). With 9 transcripts, the gap is within what one or two videos would change, so this analysis doesn't show a real difference in tone between the platforms.
+3. **The two platforms look broadly aligned.** The overall split is similar (60/29/11 vs. 67/22/11), and negative sentiment is nearly identical (10.8% vs. 11.1%). YouTube is about 7 points more positive and 7 points less neutral, but with 9 transcripts that gap is within what one or two videos would change, so this analysis doesn't show a real difference in tone between the platforms.
 4. **Sentiment scores can hide the retention risk.** The fatigue and schedule themes in the YouTube keywords don't pull the transcripts' sentiment negative, which suggests that a positive score doesn't mean the strain is absent. Associates can describe a demanding job in a positive or neutral tone, so retention analysis should look at specific themes as well as overall sentiment.
 
 ## Data-quality decisions worth noting
