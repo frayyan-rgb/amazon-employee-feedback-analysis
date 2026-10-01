@@ -68,15 +68,6 @@ Negative sentiment is almost identical on both platforms (about 11%). The only v
 3. **The two platforms look broadly aligned.** The overall split is similar (60/29/11 vs. 67/22/11), and negative sentiment is nearly identical (10.8% vs. 11.1%). YouTube is about 7 points more positive and 7 points less neutral, but with 9 transcripts that gap is within what one or two videos would change, so this analysis doesn't show a real difference in tone between the platforms.
 4. **Sentiment scores can hide the retention risk.** The fatigue and schedule themes in the YouTube keywords don't pull the transcripts' sentiment negative, which suggests that a positive score doesn't mean the strain is absent. Associates can describe a demanding job in a positive or neutral tone, so retention analysis should look at specific themes as well as overall sentiment.
 
-## Data-quality decisions worth noting
-
-A few judgment calls, documented because they'd change the results if made differently:
-
-- **NLTK's stopword list removes negations** (`not`, `no`) along with filler words. `"not interactive"` becomes `"interactive"` — the literal opposite meaning. Handled by treating single-word keyword counts as directional signal, not literal sentiment, and flagging it as a known limitation rather than silently trusting the output. **This also affects sentiment scoring**, since TextBlob reads the cleaned text, so some negative statements are scored as positive.
-- **`string.punctuation` is ASCII-only.** It misses curly quotes (`’`) and em dashes (`—`), which are common in copy-pasted review/transcript text and otherwise show up in the keyword list as fake "words." Added a regex pass (`re.fullmatch(r"[a-z]+", w)`) at the keyword-analysis stage to catch what basic punctuation stripping missed.
-- **HTML entities survive cleaning.** `&amp;` in raw Glassdoor text degrades to a stray `amp` token rather than being recognized as `&`. Left in at the cleaning stage (documented as a deliberate lightweight-cleanup tradeoff) and filtered out at the keyword-analysis stage instead.
-- **Same filtering rules on both platforms** so the Glassdoor/YouTube comparison isn't an artifact of one dataset being cleaned more aggressively than the other.
-- **Which text was scored.** Glassdoor sentiment uses a single combined field built from the cleaned summary, advice to management, pros, and cons text, so each review gets one score. Reviews with no text in any of those fields were dropped before scoring. YouTube sentiment uses each video's full cleaned transcript.
 
 ## Limitations
 
