@@ -12,8 +12,9 @@ Companies collect far more employee feedback than anyone has time to read. This 
 |---|---|---|
 | Glassdoor | 139 reviews with usable text | Amazon Fulfillment Center reviews (Glassdoor.ca), collected manually |
 | YouTube | 10 videos → 9 with usable transcripts | First-person "day in the life" / warehouse-shift videos |
+| Combined | 148 rows (139 Glassdoor + 9 YouTube) | Both scored datasets stacked into one file, tagged by a `platform` column |
 
-Raw, cleaned, and sentiment-scored data files are excluded from this repo (see `.gitignore`) since they're scraped third-party content, not original data. The code here is fully documented and reproducible against your own export of the same sources.
+Raw, cleaned, sentiment-scored, and combined data files are excluded from this repo (see `.gitignore`) since they're scraped third-party content, not original data. The code here is fully documented and reproducible against your own export of the same sources.
 
 ## Pipeline
 
@@ -24,6 +25,7 @@ Raw, cleaned, and sentiment-scored data files are excluded from this repo (see `
 | `03_keyword_analysis.ipynb` | Tokenizes cleaned text, counts word/bigram frequency, and visualizes results (bar charts + word clouds) per platform |
 | `04_sentiment_analysis.ipynb` | Scores polarity and subjectivity with TextBlob and labels each Glassdoor review and YouTube transcript positive/neutral/negative, with bar and pie charts per platform |
 | `05_sentiment_comparison.ipynb` | Loads the two scored datasets, normalizes the sentiment split for each, and compares Glassdoor and YouTube side by side |
+| `06_combine_datasets.ipynb` | Standardizes the cleaned-text column name across both scored datasets, adds a `platform` column (Glassdoor / YouTube), and stacks them with `pd.concat()` into a single 148-row `combined_sentiment_data.csv` for side-by-side comparison |
 
 ## Findings
 
@@ -88,3 +90,4 @@ Python · pandas · NLTK · TextBlob · Matplotlib · WordCloud · Google Colab
 - [x] Keyword frequency analysis
 - [x] Sentiment scoring (TextBlob)
 - [x] Cross-platform insight summary
+- [x] Combined Glassdoor + YouTube dataset (148 rows)
