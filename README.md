@@ -1,10 +1,12 @@
 # Amazon Fulfillment Center — Employee Voice Analysis
 
-Text analysis of Amazon fulfillment associate feedback from two public sources — Glassdoor reviews and YouTube "day in the life" videos — to surface the themes and sentiment behind employee retention.
+Text analysis of Amazon fulfillment associate feedback from two public sources — Glassdoor reviews and YouTube "day in the life" videos — to surface the themes and sentiment behind employee retention, then segment the workforce to see where friction is concentrated and which group to prioritize first.
 
 ## Why this project
 
 Companies collect far more employee feedback than anyone has time to read. This project treats Glassdoor and YouTube as two different lenses on the same workforce — one written and retrospective, one spoken and in-the-moment — and uses NLP to turn hundreds of individual reviews into patterns a decision-maker could act on, and to see where the two sources agree or disagree.
+
+An average hides as much as it reveals, so the final stage splits the Glassdoor reviews into workforce segments (by employment status and role), compares how friction shows up in each, and ranks the segments by business need.
 
 ## Data
 
@@ -12,9 +14,10 @@ Companies collect far more employee feedback than anyone has time to read. This 
 |---|---|---|
 | Glassdoor | 139 reviews with usable text | Amazon Fulfillment Center reviews (Glassdoor.ca), collected manually |
 | YouTube | 10 videos → 9 with usable transcripts | First-person "day in the life" / warehouse-shift videos |
-| Combined | 148 rows (139 Glassdoor + 9 YouTube) | Both scored datasets stacked into one file, tagged by a `platform` column |
+| Combined | 148 rows (139 Glassdoor + 9 YouTube) | Both scored datasets stacked into one file, tagged by a `platform` column; carries a `Theme` column from the theme-tagging step |
+| Segmented | 139 Glassdoor rows | Adds a `Segment` column built from `employee_status` and `employee_job_title`. YouTube rows are excluded because they have no job status or title |
 
-Raw, cleaned, sentiment-scored, and combined data files are excluded from this repo (see `.gitignore`) since they're scraped third-party content, not original data. The code here is fully documented and reproducible against your own export of the same sources.
+Raw, cleaned, sentiment-scored, themed, segmented, and combined data files are excluded from this repo (see `.gitignore`) since they're scraped third-party content, not original data. The code here is fully documented and reproducible against your own export of the same sources.
 
 ## Pipeline
 
@@ -26,6 +29,7 @@ Raw, cleaned, sentiment-scored, and combined data files are excluded from this r
 | `04_sentiment_analysis.ipynb` | Scores polarity and subjectivity with TextBlob and labels each Glassdoor review and YouTube transcript positive/neutral/negative, with bar and pie charts per platform |
 | `05_sentiment_comparison.ipynb` | Loads the two scored datasets, normalizes the sentiment split for each, and compares Glassdoor and YouTube side by side |
 | `06_combine_datasets.ipynb` | Standardizes the cleaned-text column name across both scored datasets, adds a `platform` column (Glassdoor / YouTube), and stacks them with `pd.concat()` into a single 148-row `combined_sentiment_data.csv` for side-by-side comparison |
+| `Project5_Segment_Analysis.ipynb` | Assigns each Glassdoor review to one of 5 workforce segments, joins the segment labels to the theme tags on `review_id`, builds the Theme Frequency by Segment tables, and supports the priority scoring |
 
 ## Findings
 
@@ -70,6 +74,59 @@ Negative sentiment is almost identical on both platforms (about 11%). The only v
 3. **The two platforms look broadly aligned.** The overall split is similar (60/29/11 vs. 67/22/11), and negative sentiment is nearly identical (10.8% vs. 11.1%). YouTube is about 7 points more positive and 7 points less neutral, but with 9 transcripts that gap is within what one or two videos would change, so this analysis doesn't show a real difference in tone between the platforms.
 4. **Sentiment scores can hide the retention risk.** The fatigue and schedule themes in the YouTube keywords don't pull the transcripts' sentiment negative, which suggests that a positive score doesn't mean the strain is absent. Associates can describe a demanding job in a positive or neutral tone, so retention analysis should look at specific themes as well as overall sentiment.
 
+### Workforce segmentation
+
+Overall sentiment is one number for everyone, which is why the analysis moves to segments. Each of the 139 Glassdoor reviews is assigned to exactly one of five segments using `employee_status` and `employee_job_title`. The rules run in order and the first match wins, so no review falls in two groups:
+
+1. Status is contract, intern, or freelance → **Contract, Intern & Freelance**
+2. Job title is a manager or corporate/specialist role (manager, engineer, HR, program, software, maintenance) → **Managers & Corporate Roles**
+3. Status is part-time, or the title says seasonal → **Part-Time & Seasonal Associates**
+4. Status is regular → **Full-Time Associates**
+5. Anything else (status blank) → **Associates (Status Not Reported)**
+
+| Segment | Reviews | % of reviews |
+|---|---|---|
+| Full-Time Associates | 77 | 55% |
+| Part-Time & Seasonal Associates | 25 | 18% |
+| Associates (Status Not Reported) | 15 | 11% |
+| Managers & Corporate Roles | 12 | 9% |
+| Contract, Intern & Freelance | 10 | 7% |
+
+### Theme frequency by segment
+
+Reviews carry up to three theme tags: **Shift Strain (Night vs Day)**, **Burnout & Fatigue**, and **New-Hire Training & Support**. A review with two tags is counted once under each, so the theme columns do not add up to the "any theme" column. Only 43 of the 139 Glassdoor reviews have a theme tag.
+
+| Segment | Shift Strain | Burnout & Fatigue | New-Hire Training | Any theme | Total reviews |
+|---|---|---|---|---|---|
+| Full-Time Associates | 16 | 12 | 4 | 26 | 77 |
+| Part-Time & Seasonal Associates | 3 | 1 | 2 | 6 | 25 |
+| Associates (Status Not Reported) | 5 | 2 | 2 | 6 | 15 |
+| Managers & Corporate Roles | 2 | 1 | 1 | 3 | 12 |
+| Contract, Intern & Freelance | 2 | 0 | 0 | 2 | 10 |
+| **All segments** | **28** | **16** | **9** | **43** | **139** |
+
+As a share of each segment's reviews, shift strain is the most common theme everywhere (20% overall) and burnout is concentrated in Full-Time Associates (16%, versus 0–13% elsewhere).
+
+### Priority ranking
+
+Each segment was scored 1–5 on Impact (how critical and hard to replace), Severity (how painful the friction is), and Size (share of reviews), then multiplied: **Priority Score = Impact × Severity × Size**.
+
+| Rank | Segment | Impact | Severity | Size | Priority Score | Avg rating | % rated 1–2 |
+|---|---|---|---|---|---|---|---|
+| 1 | Full-Time Associates | 5 | 3 | 5 | 75 | 3.39 | 17% |
+| 2 | Managers & Corporate Roles | 4 | 5 | 2 | 40 | 2.83 | 42% |
+| 3 | Associates (Status Not Reported) | 3 | 4 | 2 | 24 | 3.07 | 20% |
+| 4 | Part-Time & Seasonal Associates | 3 | 2 | 3 | 18 | 3.96 | 4% |
+| 5 | Contract, Intern & Freelance | 2 | 2 | 1 | 4 | 4.00 | 20% |
+
+Size comes directly from the review counts. Severity is judged from average rating, share of 1–2 star reviews, theme share, and negative sentiment. Impact is a judgment call and is the least data-driven score.
+
+**Segment takeaways**
+
+1. **Full-Time Associates are the top priority.** They are over half of all reviews and the core workforce, and they account for the most shift-strain (16) and burnout (12) mentions.
+2. **Managers show the sharpest dissatisfaction** (lowest average rating, 42% rating 1–2 stars) but rest on only 12 reviews, so they rank second rather than first.
+3. **Part-time and contract groups look comparatively healthy** by rating, so they are lower priority, though shift strain still appears in both.
+4. **The next step is a friction map for the top segment**, tracing where in the associate experience (scheduling, overtime, rate pressure, breaks) the strain originates.
 
 ## Limitations
 
@@ -78,6 +135,10 @@ Negative sentiment is almost identical on both platforms (about 11%). The only v
 - **Text length differs a lot between sources.** TextBlob averages across the whole text, so a long transcript and a short review aren't scored on equal footing. Any Glassdoor vs. YouTube comparison should be read with that in mind.
 - **Small YouTube sample.** With 9 transcripts, YouTube findings are directional only.
 - **Collected, not random, samples.** Both sources are self-selected (people who chose to post), so they don't represent all associates.
+- **Theme tags cover a minority of reviews.** Only 43 of 139 Glassdoor reviews carry a theme, and the tag set has three themes, so untagged complaints (pay, management, physical strain) aren't counted in the theme tables.
+- **Some segments are small.** Three segments have only 10–15 reviews, so their percentages move a lot with a single review and are directional only.
+- **Segment rules are keyword-based.** Job titles are free text in several languages, so a few roles may land in the wrong group, and reviews with a blank status can't be placed as full-time or part-time.
+- **Impact scores are judgment, not data.** Different reasonable weights could change the ranking of the middle segments.
 
 ## Tech stack
 
@@ -91,3 +152,8 @@ Python · pandas · NLTK · TextBlob · Matplotlib · WordCloud · Google Colab
 - [x] Sentiment scoring (TextBlob)
 - [x] Cross-platform insight summary
 - [x] Combined Glassdoor + YouTube dataset (148 rows)
+- [x] Theme tagging (Shift Strain, Burnout & Fatigue, New-Hire Training)
+- [x] Workforce segmentation (5 segments)
+- [x] Theme frequency by segment
+- [x] Segment priority ranking
+- [ ] Friction map for the top-priority segment
