@@ -1,12 +1,12 @@
 # Amazon Fulfillment Center — Employee Voice Analysis
 
-Text analysis of Amazon fulfillment associate feedback from two public sources — Glassdoor reviews and YouTube "day in the life" videos — to surface the themes and sentiment behind employee retention, then segment the workforce to see where friction is concentrated and which group to prioritize first.
+Text analysis of Amazon fulfillment associate feedback from two public sources — Glassdoor reviews and YouTube "day in the life" videos — to surface the themes and sentiment behind employee retention, then segment the workforce to see where friction is concentrated, which group to prioritize first, and where that group's experience breaks down.
 
 ## Why this project
 
 Companies collect far more employee feedback than anyone has time to read. This project treats Glassdoor and YouTube as two different lenses on the same workforce — one written and retrospective, one spoken and in-the-moment — and uses NLP to turn hundreds of individual reviews into patterns a decision-maker could act on, and to see where the two sources agree or disagree.
 
-An average hides as much as it reveals, so the final stage splits the Glassdoor reviews into workforce segments (by employment status and role), compares how friction shows up in each, and ranks the segments by business need.
+An average hides as much as it reveals, so the final stage splits the Glassdoor reviews into workforce segments (by employment status and role), compares how friction shows up in each, ranks the segments by business need, and maps the top segment's friction from experience to business impact.
 
 ## Data
 
@@ -29,7 +29,7 @@ Raw, cleaned, sentiment-scored, themed, segmented, and combined data files are e
 | `04_sentiment_analysis.ipynb` | Scores polarity and subjectivity with TextBlob and labels each Glassdoor review and YouTube transcript positive/neutral/negative, with bar and pie charts per platform |
 | `05_sentiment_comparison.ipynb` | Loads the two scored datasets, normalizes the sentiment split for each, and compares Glassdoor and YouTube side by side |
 | `06_combine_datasets.ipynb` | Standardizes the cleaned-text column name across both scored datasets, adds a `platform` column (Glassdoor / YouTube), and stacks them with `pd.concat()` into a single 148-row `combined_sentiment_data.csv` for side-by-side comparison |
-| `Project5_Segment_Analysis.ipynb` | Assigns each Glassdoor review to one of 5 workforce segments, joins the segment labels to the theme tags on `review_id`, builds the Theme Frequency by Segment tables, and supports the priority scoring |
+| `Project5_Segment_Analysis.ipynb` | Assigns each Glassdoor review to one of 5 workforce segments, joins the segment labels to the theme tags on `review_id`, builds the Theme Frequency by Segment tables, supports the priority scoring, and builds the friction table for the top segment (evidence counts plus verified review quotes) |
 
 ## Findings
 
@@ -126,7 +126,19 @@ Size comes directly from the review counts. Severity is judged from average rati
 1. **Full-Time Associates are the top priority.** They are over half of all reviews and the core workforce, and they account for the most shift-strain (16) and burnout (12) mentions.
 2. **Managers show the sharpest dissatisfaction** (lowest average rating, 42% rating 1–2 stars) but rest on only 12 reviews, so they rank second rather than first.
 3. **Part-time and contract groups look comparatively healthy** by rating, so they are lower priority, though shift strain still appears in both.
-4. **The next step is a friction map for the top segment**, tracing where in the associate experience (scheduling, overtime, rate pressure, breaks) the strain originates.
+4. **The friction table (below) traces where the top segment's strain originates**: scheduling and overtime, physical strain, and rate pressure.
+
+### Friction table: Full-Time Associates
+
+For the top-priority segment, each row follows one chain from what associates experience, to where it breaks down, to the likely business impact. Evidence counts come from the data, and each quote is checked in code against the real review text.
+
+| Experience | Friction point | Likely impact | Evidence |
+|---|---|---|---|
+| 10–12 hour shifts, with overtime and night hours that can be mandatory | Long shifts and extra hours arrive with little notice, and breaks are limited | Fatigue and trouble planning life outside work, likely lowering morale and raising turnover | 16 reviews tagged Shift Strain; *"mandatory overtime with little to no heads up"* |
+| Physically demanding, repetitive work, often standing the whole shift | Little recovery time inside the shift, so strain builds up | Burnout, injury risk, and absence, likely leading to attrition and slower output late in the shift | 12 reviews tagged Burnout & Fatigue; *"its a physical job so prepare to be tired."* |
+| Tracked on rate and targets throughout the shift | Missing rate brings write-ups, and associates feel valued only for their numbers | Pressure to cut corners and quit, likely raising safety risk, turnover, and rehiring cost | 12 reviews mention rate, targets, or numbers (keyword search); *"get write ups for not meeting their rate expectations"* |
+
+The third pain point, rate pressure, is not one of the three theme tags. It was found with a keyword search on the review text, so it includes a few loose matches. The "likely impact" column is an inference: reviews describe the friction, not the business outcome.
 
 ## Limitations
 
@@ -139,6 +151,8 @@ Size comes directly from the review counts. Severity is judged from average rati
 - **Some segments are small.** Three segments have only 10–15 reviews, so their percentages move a lot with a single review and are directional only.
 - **Segment rules are keyword-based.** Job titles are free text in several languages, so a few roles may land in the wrong group, and reviews with a blank status can't be placed as full-time or part-time.
 - **Impact scores are judgment, not data.** Different reasonable weights could change the ranking of the middle segments.
+- **Theme tags look loose in places.** Some reviews tagged Shift Strain don't discuss shifts in their cons text, which suggests tags were applied to the full review, including the pros. Friction-table quotes were hand-picked from reviews that actually describe the problem.
+- **Friction-table impacts are inferences.** Reviews describe the experience and the friction, not measured outcomes like turnover or output, so the impact column is hypothesis, not evidence.
 
 ## Tech stack
 
@@ -156,4 +170,5 @@ Python · pandas · NLTK · TextBlob · Matplotlib · WordCloud · Google Colab
 - [x] Workforce segmentation (5 segments)
 - [x] Theme frequency by segment
 - [x] Segment priority ranking
-- [ ] Friction map for the top-priority segment
+- [x] Friction table for the top-priority segment (Full-Time Associates)
+- [ ] Friction map (flowchart) for the top-priority segment
